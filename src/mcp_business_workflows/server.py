@@ -3,11 +3,13 @@ from mcp.server import Server
 
 from mcp_business_workflows.config import settings
 from mcp_business_workflows.logging import configure_logging, get_logger
+from mcp_business_workflows.tools import notes as notes_tools
 
 configure_logging(settings.log_level)
 log = get_logger(__name__)
 
 app = Server("mcp-business-workflows")
+notes_tools.register(app)
 
 
 def main() -> None:
