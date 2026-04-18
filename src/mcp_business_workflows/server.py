@@ -1,22 +1,31 @@
 import mcp.server.stdio
 from mcp.server import Server
+from mcp.types import TextContent, Tool
 
 from mcp_business_workflows.config import settings
+from mcp_business_workflows.errors import dispatch
 from mcp_business_workflows.logging import configure_logging, get_logger
-from mcp_business_workflows.auth import verify_token
-from mcp_business_workflows.tools import github as github_tools
-from mcp_business_workflows.tools import notes as notes_tools
-from mcp_business_workflows.tools import status as status_tools
-from mcp_business_workflows.tools import webhooks as webhook_tools
+from mcp_business_workflows.tools import github, notes, status, webhooks
 
 configure_logging(settings.log_level)
 log = get_logger(__name__)
 
+_MODULES = [notes, github, webhooks, status]
+
 app = Server("mcp-business-workflows")
-notes_tools.register(app)
-github_tools.register(app)
-webhook_tools.register(app)
-status_tools.register(app)
+
+
+@app.list_tools()
+async def list_tools() -> list[Tool]:
+    tools = []
+    for mod in _MODULES:
+        tools.extend(mod.TOOLS)
+    return tools
+
+
+@app.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[TextContent]:  # type: ignore[type-arg]
+    return await dispatch(name, arguments, _MODULES)
 
 
 def main() -> None:
