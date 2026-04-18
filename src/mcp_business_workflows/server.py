@@ -3,6 +3,7 @@ from mcp.server import Server
 
 from mcp_business_workflows.config import settings
 from mcp_business_workflows.logging import configure_logging, get_logger
+from mcp_business_workflows.auth import verify_token
 from mcp_business_workflows.tools import github as github_tools
 from mcp_business_workflows.tools import notes as notes_tools
 from mcp_business_workflows.tools import status as status_tools
@@ -20,6 +21,10 @@ status_tools.register(app)
 
 def main() -> None:
     import asyncio
+
+    if not settings.api_token:
+        log.error("server.startup_failed", reason="MCP_API_TOKEN not configured")
+        raise SystemExit(1)
 
     log.info("server.starting", host=settings.host, port=settings.port)
 
