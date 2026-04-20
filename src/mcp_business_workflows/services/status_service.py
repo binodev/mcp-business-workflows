@@ -16,7 +16,9 @@ ALL_CONNECTORS = ["github", "webhook"]
 
 def _check_github(token: str) -> ConnectorHealth:
     if not token:
-        return ConnectorHealth(name="github", status=ConnectorStatus.unconfigured, detail="GITHUB_TOKEN not set")
+        return ConnectorHealth(
+            name="github", status=ConnectorStatus.unconfigured, detail="GITHUB_TOKEN not set"
+        )
     try:
         r = httpx.get(
             "https://api.github.com/rate_limit",
@@ -36,7 +38,9 @@ def _check_github(token: str) -> ConnectorHealth:
             detail=f"Unexpected status {r.status_code}",
         )
     except httpx.TimeoutException:
-        return ConnectorHealth(name="github", status=ConnectorStatus.unreachable, detail="Request timed out")
+        return ConnectorHealth(
+            name="github", status=ConnectorStatus.unreachable, detail="Request timed out"
+        )
     except httpx.RequestError as exc:
         return ConnectorHealth(name="github", status=ConnectorStatus.unreachable, detail=str(exc))
 
@@ -44,9 +48,13 @@ def _check_github(token: str) -> ConnectorHealth:
 def _check_webhook(default_url: str) -> ConnectorHealth:
     if not default_url:
         return ConnectorHealth(
-            name="webhook", status=ConnectorStatus.unconfigured, detail="WEBHOOK_DEFAULT_URL not set"
+            name="webhook",
+            status=ConnectorStatus.unconfigured,
+            detail="WEBHOOK_DEFAULT_URL not set",
         )
-    return ConnectorHealth(name="webhook", status=ConnectorStatus.healthy, detail=f"Configured → {default_url}")
+    return ConnectorHealth(
+        name="webhook", status=ConnectorStatus.healthy, detail=f"Configured → {default_url}"
+    )
 
 
 _CHECKERS = {
@@ -61,7 +69,11 @@ class StatusService:
         names = [n for n in inp.connectors if n in _CHECKERS] or ALL_CONNECTORS
         results = [_CHECKERS[name]() for name in names]
 
-        unhealthy = [r for r in results if r.status in (ConnectorStatus.unreachable, ConnectorStatus.degraded)]
+        unhealthy = [
+            r
+            for r in results
+            if r.status in (ConnectorStatus.unreachable, ConnectorStatus.degraded)
+        ]
         unconfigured = [r for r in results if r.status == ConnectorStatus.unconfigured]
 
         if unhealthy:
@@ -81,13 +93,13 @@ class StatusService:
             confidence=0.95,
             requires_human_review=requires_review,
             next_step=(
-                f"{len(unhealthy)} connector(s) unreachable — investigate before triggering workflows."
+                f"{len(unhealthy)} connector(s) unreachable"
+                " — investigate before triggering workflows."
                 if unhealthy
                 else "All connectors operational. Safe to proceed."
             ),
             context_summary=(
-                f"System status: {overall}. "
-                + ", ".join(f"{r.name}={r.status}" for r in results)
+                f"System status: {overall}. " + ", ".join(f"{r.name}={r.status}" for r in results)
             ),
             event_id=event_id,
         )

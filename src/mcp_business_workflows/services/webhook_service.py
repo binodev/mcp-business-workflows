@@ -40,7 +40,11 @@ class WebhookService:
                 requires_human_review=is_sensitive,
                 next_step=(
                     f"Event '{inp.event_type}' delivered (HTTP {status_code}). "
-                    + ("Verify downstream systems received it." if is_sensitive else "No further action needed.")
+                    + (
+                        "Verify downstream systems received it."
+                        if is_sensitive
+                        else "No further action needed."
+                    )
                 ),
                 context_summary=f"Webhook '{inp.event_type}' → {url} — HTTP {status_code}.",
                 event_id=event_id,
@@ -62,7 +66,12 @@ class WebhookService:
                 recommended_action="retry_or_escalate",
                 confidence=0.0,
                 requires_human_review=True,
-                next_step=f"Webhook delivery failed (HTTP {exc.status_code}). Investigate target endpoint and retry.",
-                context_summary=f"Webhook '{inp.event_type}' → {url} — FAILED with HTTP {exc.status_code}.",
+                next_step=(
+                    f"Webhook delivery failed (HTTP {exc.status_code})."
+                    " Investigate target endpoint and retry."
+                ),
+                context_summary=(
+                    f"Webhook '{inp.event_type}' → {url} — FAILED with HTTP {exc.status_code}."
+                ),
                 event_id=event_id,
             )

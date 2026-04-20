@@ -52,3 +52,31 @@ class CreateTaskOutput(BaseModel):
     next_step: str
     context_summary: str
     event_id: str
+
+
+class WorkflowSignal(StrEnum):
+    incident = "incident"
+    degraded = "degraded"
+    issues = "issues"
+    webhook = "webhook"
+    review = "review"
+
+
+class RecommendNextActionInput(BaseModel):
+    context: str = Field(
+        ..., min_length=1, description="Description of the current situation or recent tool output"
+    )
+    signals: list[WorkflowSignal] = Field(
+        default=[],
+        description="Explicit workflow signals to factor into the recommendation",
+    )
+
+
+class RecommendNextActionOutput(BaseModel):
+    recommended_action: str
+    rationale: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    requires_human_review: bool
+    next_step: str
+    context_summary: str
+    event_id: str

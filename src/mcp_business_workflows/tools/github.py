@@ -23,7 +23,9 @@ TOOLS = [
             "properties": {
                 "repo": {
                     "type": "string",
-                    "description": "GitHub repository in owner/repo format. Falls back to GITHUB_DEFAULT_REPO.",
+                    "description": (
+                        "GitHub repository in owner/repo format. Falls back to GITHUB_DEFAULT_REPO."
+                    ),
                 },
                 "state": {
                     "type": "string",

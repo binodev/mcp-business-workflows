@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field
 
 
 class DispatchWebhookInput(BaseModel):
-    url: str = Field("", description="Webhook target URL — falls back to WEBHOOK_DEFAULT_URL if empty")
+    url: str = Field(
+        "", description="Webhook target URL — falls back to WEBHOOK_DEFAULT_URL if empty"
+    )
     event_type: str = Field(..., description="Event name (e.g. 'deployment.triggered')")
     payload: dict = Field(default_factory=dict, description="Arbitrary JSON payload")  # type: ignore[type-arg]
 

@@ -6,7 +6,7 @@ from mcp_business_workflows.adapters.github_client import (
     GitHubClient,
     GitHubNotFoundError,
 )
-from mcp_business_workflows.schemas.github import IssueState, ListOpenIssuesInput
+from mcp_business_workflows.schemas.github import ListOpenIssuesInput
 from mcp_business_workflows.services.github_service import GitHubService
 
 REPO = "acme/backend"
@@ -70,7 +70,9 @@ class TestGitHubService:
         assert 0.0 <= out.confidence <= 1.0
         assert out.event_id
 
-    def test_critical_labels_trigger_human_review(self, service: GitHubService, httpx_mock: HTTPXMock) -> None:
+    def test_critical_labels_trigger_human_review(
+        self, service: GitHubService, httpx_mock: HTTPXMock
+    ) -> None:
         httpx_mock.add_response(json=[CRITICAL_ISSUE_FIXTURE])
         out = service.list_open_issues(ListOpenIssuesInput())
         assert out.requires_human_review is True
@@ -88,7 +90,9 @@ class TestGitHubService:
         assert out.total == 0
         assert "clear" in out.next_step.lower()
 
-    def test_uses_provided_repo_over_default(self, service: GitHubService, httpx_mock: HTTPXMock) -> None:
+    def test_uses_provided_repo_over_default(
+        self, service: GitHubService, httpx_mock: HTTPXMock
+    ) -> None:
         httpx_mock.add_response(json=[])
         out = service.list_open_issues(ListOpenIssuesInput(repo="other/repo"))
         assert out.repo == "other/repo"

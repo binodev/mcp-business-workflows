@@ -4,7 +4,11 @@ from mcp.types import TextContent, Tool
 
 from mcp_business_workflows.adapters.memory_store import NoteStore
 from mcp_business_workflows.config import settings
-from mcp_business_workflows.schemas.notes import CreateTaskInput, SearchNotesInput
+from mcp_business_workflows.schemas.notes import (
+    CreateTaskInput,
+    RecommendNextActionInput,
+    SearchNotesInput,
+)
 from mcp_business_workflows.services.notes_service import NotesService
 
 _store = NoteStore(settings.notes_store_path)
@@ -24,7 +28,10 @@ TOOLS = [
                 "query": {"type": "string", "description": "Keyword or phrase to search"},
                 "tags": {
                     "type": "array",
-                    "items": {"type": "string", "enum": ["ops", "incident", "review", "followup", "general"]},
+                    "items": {
+                        "type": "string",
+                        "enum": ["ops", "incident", "review", "followup", "general"],
+                    },
                     "description": "Filter by tags (optional)",
                 },
                 "limit": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
@@ -45,11 +52,45 @@ TOOLS = [
                 "content": {"type": "string", "description": "Note body"},
                 "tags": {
                     "type": "array",
-                    "items": {"type": "string", "enum": ["ops", "incident", "review", "followup", "general"]},
+                    "items": {
+                        "type": "string",
+                        "enum": ["ops", "incident", "review", "followup", "general"],
+                    },
                     "description": "Tags to categorize the note",
                 },
             },
             "required": ["title", "content"],
+        },
+    ),
+    Tool(
+        name="recommend_next_action",
+        description=(
+            "Analyze the current workflow context and recommend the best next action. "
+            "Uses signal detection (incident, degraded, issues, webhook, review) to produce "
+            "a structured recommendation with confidence score and human-review flag. "
+            "Call this after any tool output to get agentic routing guidance."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "context": {
+                    "type": "string",
+                    "description": (
+                        "Description of the current situation or recent tool output to analyze"
+                    ),
+                },
+                "signals": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": ["incident", "degraded", "issues", "webhook", "review"],
+                    },
+                    "description": (
+                        "Explicit workflow signals to factor into the recommendation (optional)"
+                    ),
+                },
+            },
+            "required": ["context"],
         },
     ),
 ]
@@ -60,6 +101,8 @@ async def handle(name: str, arguments: dict) -> list[TextContent]:  # type: igno
         out = _service.search(SearchNotesInput.model_validate(arguments))
     elif name == "create_task":
         out = _service.create_task(CreateTaskInput.model_validate(arguments))
+    elif name == "recommend_next_action":
+        out = _service.recommend_next_action(RecommendNextActionInput.model_validate(arguments))
     else:
         raise ValueError(f"Unknown tool: {name}")
     return [TextContent(type="text", text=json.dumps(out.model_dump(mode="json"), indent=2))]

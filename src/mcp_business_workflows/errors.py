@@ -16,7 +16,9 @@ def error_response(code: str, message: str, event_id: str) -> list[TextContent]:
             text=json.dumps(
                 {
                     "error": {"code": code, "message": message},
-                    "recommended_action": "fix_input_and_retry" if code == "validation_error" else "escalate",
+                    "recommended_action": "fix_input_and_retry"
+                    if code == "validation_error"
+                    else "escalate",
                     "confidence": 0.0,
                     "requires_human_review": code != "validation_error",
                     "next_step": message,
@@ -36,7 +38,9 @@ async def dispatch(name: str, arguments: dict, modules: list) -> list[TextConten
                 return await mod.handle(name, arguments)
             except ValidationError as exc:
                 log.warning("tool.validation_error", tool=name, event_id=event_id, error=str(exc))
-                return error_response("validation_error", f"Invalid input: {exc.error_count()} error(s)", event_id)
+                return error_response(
+                    "validation_error", f"Invalid input: {exc.error_count()} error(s)", event_id
+                )
             except GitHubAuthError as exc:
                 log.error("tool.github_auth_error", tool=name, event_id=event_id)
                 return error_response("github_auth_error", str(exc), event_id)

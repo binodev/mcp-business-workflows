@@ -22,7 +22,9 @@ class WebhookClient:
             **self.extra_headers,
         }
         with httpx.Client(timeout=self.timeout) as client:
-            response = client.post(url, json={"event_type": event_type, "payload": payload}, headers=headers)
+            response = client.post(
+                url, json={"event_type": event_type, "payload": payload}, headers=headers
+            )
 
         if response.status_code >= 500:
             raise WebhookDeliveryError(response.status_code, response.text)
