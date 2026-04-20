@@ -1,0 +1,12 @@
+services:
+  mcp:
+    build: .
+    stdin_open: true
+    tty: true
+    environment:
+      MCP_API_TOKEN: ${MCP_API_TOKEN}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GITHUB_DEFAULT_REPO: ${GITHUB_DEFAULT_REPO:-}
+      WEBHOOK_DEFAULT_URL: ${WEBHOOK_DEFAULT_URL:-}
+    volumes:
+      - ./data:/app/data
