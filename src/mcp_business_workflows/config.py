@@ -24,4 +24,4 @@ class Settings(BaseSettings):
     notes_store_path: str = Field("./data/notes.json", alias="NOTES_STORE_PATH")
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]

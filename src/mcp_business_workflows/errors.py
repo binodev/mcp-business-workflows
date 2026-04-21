@@ -35,7 +35,7 @@ async def dispatch(name: str, arguments: dict, modules: list) -> list[TextConten
     for mod in modules:
         if any(t.name == name for t in mod.TOOLS):
             try:
-                return await mod.handle(name, arguments)
+                return await mod.handle(name, arguments)  # type: ignore[no-any-return]
             except ValidationError as exc:
                 log.warning("tool.validation_error", tool=name, event_id=event_id, error=str(exc))
                 return error_response(

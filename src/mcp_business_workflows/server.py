@@ -15,7 +15,7 @@ _MODULES = [notes, github, webhooks, status]
 app = Server("mcp-business-workflows")
 
 
-@app.list_tools()
+@app.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
 async def list_tools() -> list[Tool]:
     tools = []
     for mod in _MODULES:
@@ -23,7 +23,7 @@ async def list_tools() -> list[Tool]:
     return tools
 
 
-@app.call_tool()
+@app.call_tool()  # type: ignore[untyped-decorator]
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:  # type: ignore[type-arg]
     return await dispatch(name, arguments, _MODULES)
 

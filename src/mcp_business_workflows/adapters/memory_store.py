@@ -12,7 +12,8 @@ class NoteStore:
             self._path.write_text("[]")
 
     def _load(self) -> list[dict]:  # type: ignore[type-arg]
-        return json.loads(self._path.read_text())
+        result: list[dict] = json.loads(self._path.read_text())  # type: ignore[type-arg]
+        return result
 
     def _save(self, records: list[dict]) -> None:  # type: ignore[type-arg]
         self._path.write_text(json.dumps(records, indent=2, default=str))

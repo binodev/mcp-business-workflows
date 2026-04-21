@@ -6,8 +6,11 @@ from mcp_business_workflows.adapters.memory_store import NoteStore
 from mcp_business_workflows.config import settings
 from mcp_business_workflows.schemas.notes import (
     CreateTaskInput,
+    CreateTaskOutput,
     RecommendNextActionInput,
+    RecommendNextActionOutput,
     SearchNotesInput,
+    SearchNotesOutput,
 )
 from mcp_business_workflows.services.notes_service import NotesService
 
@@ -97,6 +100,7 @@ TOOLS = [
 
 
 async def handle(name: str, arguments: dict) -> list[TextContent]:  # type: ignore[type-arg]
+    out: SearchNotesOutput | CreateTaskOutput | RecommendNextActionOutput
     if name == "search_notes":
         out = _service.search(SearchNotesInput.model_validate(arguments))
     elif name == "create_task":
