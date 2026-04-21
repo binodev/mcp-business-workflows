@@ -1,17 +1,20 @@
 # mcp-business-workflows
 
-**An opinionated MCP server that gives AI agents a business-grade workflow layer — not just tool access.**
+**An MCP server that gives AI agents a structured decision layer for tech ops workflows.**
 
-Most MCP servers expose raw capabilities. This one adds the routing layer on top: every tool returns a structured decision envelope with a `recommended_action`, `confidence` score, `requires_human_review` flag, and `next_step` instruction. Agents can act on these directly, without extra prompt engineering.
+Most MCP servers expose raw capabilities. This one adds a routing layer on top: every tool returns a structured decision envelope with a `recommended_action`, `confidence` score, `requires_human_review` flag, and `next_step` instruction — so agents can act without extra prompt engineering.
+
+**v1 scope:** tech ops — deployments, incidents, GitHub triage, webhook dispatch.
+**Designed to extend** to other domains (support, finance, legal) as verticals.
 
 ---
 
-## Why
+## The problem
 
-Agents need more than tools. They need:
-- **Triage** — is this an incident or a routine task?
-- **Routing** — escalate to human, dispatch webhook, or continue autonomously?
-- **Confidence** — how certain is the system about this recommendation?
+An AI agent with raw tool access can *do* things. But it doesn't know:
+- Is this situation an incident or a routine task?
+- Should it escalate to a human or continue autonomously?
+- How confident should it be in this action?
 
 `mcp-business-workflows` bakes these decisions into every tool response.
 
@@ -27,7 +30,7 @@ uv sync --extra dev
 
 # 2. Configure
 cp .env.example .env
-# Edit .env: set MCP_API_TOKEN, optionally GITHUB_TOKEN and WEBHOOK_DEFAULT_URL
+# Set MCP_API_TOKEN (required), GITHUB_TOKEN and WEBHOOK_DEFAULT_URL (optional)
 
 # 3. Run
 uv run mcp-business-workflows
@@ -45,29 +48,52 @@ docker run --rm \
 
 ---
 
-## Tools
+## Tools — v1 (tech ops)
 
-| Tool | Description |
+| Tool | What it does |
 |---|---|
-| `search_notes` | Search operational notes by keyword/tag — returns results + routing signal |
-| `create_task` | Create a note/task in the local store — auto-flags incidents for human review |
-| `list_open_issues` | Fetch GitHub issues — detects bug/critical labels and recommends triage |
-| `dispatch_webhook` | HTTP POST to a webhook — reports delivery status and recommends retry on failure |
-| `get_system_status` | Check connector health (GitHub, Webhook) — recommends investigation when degraded |
-| `recommend_next_action` | Analyze context, detect signals, recommend the best next workflow step |
+| `get_system_status` | Check connector health — recommends investigation when degraded |
+| `search_notes` | Search operational notes by keyword/tag — surfaces past incidents and decisions |
+| `create_task` | Create a traceable note — auto-flags incidents for human review |
+| `list_open_issues` | Fetch GitHub issues — detects critical labels and recommends triage |
+| `dispatch_webhook` | HTTP POST to a webhook — reports delivery status, recommends retry on failure |
+| `recommend_next_action` | Analyze context, detect signals, recommend the best next step |
 
-Every tool response follows this envelope:
+Every tool response follows the same envelope:
 
 ```json
 {
-  "result": {},
   "recommended_action": "escalate_to_oncall",
   "confidence": 0.92,
   "requires_human_review": true,
   "next_step": "Page the on-call engineer and open an incident note.",
-  "context_summary": "Detected incident-level signals in context.",
+  "context_summary": "Incident-level signals detected in context.",
   "event_id": "a3f1b2c4d5e6"
 }
+```
+
+When `requires_human_review` is `true`, a well-designed agent stops and routes to a human. Automation does not proceed blindly.
+
+---
+
+## Real agent test
+
+Connect any supported LLM to this server. The agent autonomously decides which tools to call and stops when human review is required — no scripted flow.
+
+```bash
+# Google AI Studio (free tier available)
+LLM_PROVIDER=google GOOGLE_API_KEY=... uv run python examples/agent_test.py
+
+# Anthropic
+LLM_PROVIDER=anthropic ANTHROPIC_API_KEY=... uv run python examples/agent_test.py
+```
+
+```
+[tool call] get_system_status      → system_operational  (confidence: 0.95)
+[tool call] create_task            → continue_workflow   (confidence: 0.90)
+[tool call] search_notes           → review_results      (confidence: 0.67)
+[tool call] list_open_issues       → review_backlog      (confidence: 0.50)
+[tool call] recommend_next_action  → requires_human_review: true
 ```
 
 ---
@@ -79,15 +105,15 @@ MCP transport (stdio)
   └── Tool definitions     tools/*.py
         └── Service layer  services/*.py
               └── Adapters adapters/*.py
-                    ├── NoteStore  (local JSON)
-                    ├── GitHubClient (REST API)
-                    └── WebhookClient (HTTP POST)
+                    ├── NoteStore      (local JSON)
+                    ├── GitHubClient   (REST API)
+                    └── WebhookClient  (HTTP POST)
 
-Observability: structlog JSON + event_id on every call
+Observability : structlog JSON + event_id on every call
 Decision layer: embedded in services, explicit via recommend_next_action
 ```
 
-See [docs/architecture.md](docs/architecture.md) for the full breakdown and [docs/tools.md](docs/tools.md) for the complete tool reference.
+The envelope pattern and decision layer are domain-agnostic. The v1 tools are one vertical — the architecture is designed to add others.
 
 ---
 
@@ -101,41 +127,16 @@ See [docs/architecture.md](docs/architecture.md) for the full breakdown and [doc
 | `WEBHOOK_DEFAULT_URL` | No | `""` | Default webhook endpoint |
 | `NOTES_STORE_PATH` | No | `./data/notes.json` | Path to notes file |
 
-Copy `.env.example` and fill in your values.
-
 ---
 
 ## Development
 
 ```bash
-# Install deps
-uv sync --extra dev
-
-# Run tests
-make test
-
-# Lint + type check
-make lint
-
-# Full check (lint + tests)
-make check
+uv sync --extra dev   # install
+make test             # run tests (44 passing)
+make lint             # ruff + mypy
+make check            # lint + tests
 ```
-
----
-
-## Roadmap
-
-- [x] `search_notes` — local JSON note store
-- [x] `create_task` — note creation with incident detection
-- [x] `list_open_issues` — GitHub REST API integration
-- [x] `dispatch_webhook` — HTTP POST with delivery status
-- [x] `get_system_status` — connector health checks
-- [x] `recommend_next_action` — explicit decision-layer tool
-- [x] Structured output envelope on all tools
-- [x] Structured JSON logging with event IDs
-- [x] Bearer token auth
-- [ ] Dockerfile + CI (in progress)
-- [ ] `recommend_next_action` v2 — LLM-backed with Claude API
 
 ---
 

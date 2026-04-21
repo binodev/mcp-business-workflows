@@ -1,4 +1,5 @@
 import logging
+import sys
 import uuid
 
 import structlog
@@ -16,7 +17,7 @@ def configure_logging(log_level: str = "INFO") -> None:
             logging.getLevelName(log_level.upper())
         ),
         context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(),
+        logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
     )
 
 
